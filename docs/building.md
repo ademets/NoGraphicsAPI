@@ -2,7 +2,7 @@
 
 See the README for [Windows](../README.md#windows-installation-and-quick-start),
 [macOS](../README.md#macos-installation-and-quick-start), and [hardware requirements](../README.md#hardware-requirements).
-CMake selects native Metal on Apple platforms and Vulkan elsewhere. Metal 4 is preferred at runtime; Metal 3 uses the same build.
+CMake selects native Metal 4 on Apple platforms and Vulkan elsewhere. Apple devices require OS 26+ and Apple GPU family 7 or newer.
 
 | Target | Toolchain |
 | --- | --- |
@@ -42,8 +42,8 @@ cmake --build build-ios --config Release
 Compile metallibs for the target SDK; macOS libraries cannot be used on iOS. See [Slang compilation](slang.md).
 For presentation, supply an application-owned `CAMetalLayer*` as `DeviceDesc::window`.
 
-Tests also build a private compatibility library: `_buffer_commands` tests force Vulkan buffer commands or Metal 3
-even on devices supporting the preferred path. Normal library builds always select the preferred available backend.
+Vulkan tests also build a private compatibility library: `_buffer_commands` tests force buffer commands
+even on devices supporting device-address commands. Normal Vulkan builds select device-address commands when available.
 
 ## Using the library
 

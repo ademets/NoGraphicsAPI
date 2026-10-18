@@ -1,7 +1,6 @@
 #include <NoGraphicsAPI/NoGraphicsAPI.hpp>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
-#include <TargetConditionals.h>
 #include <stdio.h>
 #include <string.h>
 int main(int argc, char** argv)
@@ -12,24 +11,19 @@ int main(int argc, char** argv)
         for (gpu::int32 i = 1; i < argc; ++i)
         {
             if (strcmp(argv[i], "--triple") == 0) desc.desired_swapchain_image_count = 3;
-            else if (strcmp(argv[i], "--steam-overlay") == 0) desc.steam_overlay_compatibility = true;
             else { fprintf(stderr, "Unknown option: %s\n", argv[i]); return 1; }
         }
         CAMetalLayer* layer = [CAMetalLayer new];
         layer.drawableSize = CGSizeMake(16, 16);
         // Initialization must override a conflicting caller-provided layer setting.
-        layer.framebufferOnly = desc.steam_overlay_compatibility ? YES : NO;
+        layer.framebufferOnly = NO;
         desc.window = layer;
         const gpu::DeviceInit init = gpu::create_device(desc);
         if (init.error == gpu::Error::unsupported) { [layer release]; return 77; }
         if (!init.device) { [layer release]; return 1; }
-#if TARGET_OS_OSX
-        if (layer.framebufferOnly != (desc.steam_overlay_compatibility ? NO : YES))
-#else
         if (!layer.framebufferOnly)
-#endif
         {
-            fprintf(stderr, "Drawable framebuffer-only setting does not match the requested presentation mode.\n");
+            fprintf(stderr, "Drawables must be framebuffer-only.\n");
             gpu::wait_idle(init.device);
             gpu::destroy_device(init.device);
             [layer release];

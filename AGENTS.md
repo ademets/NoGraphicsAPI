@@ -54,6 +54,7 @@
 - NEVER read struct fields or other data from GPU memory on the CPU, including CPU-mapped allocations, except for explicit readback after GPU completion.
   Prepare, inspect and modify data in cached CPU memory, then write it to GPU memory. Treat upload and descriptor mappings as write-only, including in examples and tests.
 - Always review code for performance issues before considering work complete.
+- Fix the demonstrated root cause of correctness failures. Do not use blanket resource retention, synchronization or other global overhead to silence diagnostics.
 - Line length is 160 characters. Please don't chop expressions to multiple lines if not needed.
 
 # Documentation Guidelines

@@ -1,7 +1,7 @@
 # Shared Slang shader contract
 
 NoGraphicsAPI shaders share aligned root structures, real 64-bit GPU pointers, and separate
-texture/sampler index namespaces across Vulkan and Metal 3/4. Include
+texture/sampler index namespaces across Vulkan and Metal 4. Include
 `<NoGraphicsAPI/shader.slang>` for the target ABI and
 `<NoGraphicsAPIUtility/shader_types.h>` in CPU/GPU shared data headers.
 
@@ -53,7 +53,7 @@ additional pointers inside the root can be selected by GPU work.
 | Vulkan | Uniform buffer at binding 0, mapped to the 64-bit address in push data | Native resource descriptor heap | Native sampler descriptor heap |
 | Metal | `ConstantBuffer<T>` at buffer 0 in the `constant` address space | 64-bit texture-pool base at buffer 1 | Typed sampler entries at buffer 2 |
 
-Both Metal 3 and Metal 4 require OS 26+ and select textures using `baseResourceID + index`.
+Metal 4 selects textures using `baseResourceID + index`.
 
 Roots share a constant-buffer layout on both targets:
 
@@ -100,7 +100,7 @@ This applies to default and explicit viewports; shaders need no Y-flip helper or
 ## Build and stage artifacts
 
 Vulkan requires Slang 2026.14.1+ and SPIRV-Tools 2026.3+. Metal requires stock Slang 2026.18.2+ and
-Xcode 26+; compile Metal 4.0 metallibs for macOS or iOS 26+ for both command backends.
+Xcode 26+; compile Metal 4.0 metallibs for macOS or iOS 26+.
 No Slang fork or generated-source rewriting is required.
 Both targets use `-matrix-layout-row-major`; Vulkan additionally requires `-fvk-use-c-layout`.
 

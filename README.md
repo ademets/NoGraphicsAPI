@@ -1,7 +1,7 @@
 # NoGraphicsAPI
 
-NoGraphicsAPI is a C++20 graphics library for **Metal 3/4** devices and **Vulkan 1.4** devices with
-**`VK_EXT_descriptor_heap`** and **`VK_EXT_mesh_shader`**. Metal 4 and Vulkan device-address commands are preferred when available.
+NoGraphicsAPI is a C++20 graphics library for **Metal 4** devices and **Vulkan 1.4** devices with
+**`VK_EXT_descriptor_heap`** and **`VK_EXT_mesh_shader`**.
 It implements the ideas in Sebastian Aaltonen's [*No Graphics API*](https://www.sebastianaaltonen.com/blog/no-graphics-api)
 with GPU pointers, descriptor heaps, and shared Slang shaders.
 
@@ -90,17 +90,15 @@ the [shader guide](docs/slang.md) for complete examples.
 
 ## Native implementations
 
-Metal exposes native GPU addresses. Metal 4 draw/dispatch commands accept those addresses directly;
-Metal 3 maps command pointers to buffers and offsets. Both require `MTLTextureViewPool` for indexed textures.
-Vulkan uses device-address commands when available and the same buffer mapping otherwise. See [Metal implementation](docs/metal-support.md) and
+Metal 4 draw/dispatch commands accept native GPU addresses directly and use `MTLTextureViewPool` for indexed textures.
+Vulkan uses device-address commands when available and resolves addresses to backing buffers otherwise. See [Metal implementation](docs/metal-support.md) and
 [Vulkan implementation](docs/vulkan-support.md) for how these map to NoGraphicsAPI.
 
 ## Hardware requirements
 
 ### Metal
 
-Requires macOS, iOS or iPadOS 26+ and Apple GPU family 7 or newer.
-Metal 4 is selected on supported devices; otherwise the backend uses Metal 3. Both require OS 26+.
+Requires Metal 4, macOS, iOS or iPadOS 26+, and Apple GPU family 7 or newer.
 
 | Platform | Supported devices |
 | --- | --- |

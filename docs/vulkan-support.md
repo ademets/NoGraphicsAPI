@@ -232,6 +232,11 @@ load/store state and clears are specified at the rendering call. Barriers remain
 not implied by rendering boundaries. Each `begin_render_pass()` sets a full render-area viewport and
 scissor and disables depth/stencil, preventing state from leaking between passes. Applications call
 `set_viewport()`, `set_scissor()`, or `set_depth_stencil()` after beginning a pass to override those defaults.
+Bind a graphics or mesh PSO inside each pass before drawing, including resumed segments; relying on a
+previous pass's pipeline binding is outside the API contract.
+Rebind compute before dispatching after a render pass as well. The wrapper stores no selected PSO and never restores one;
+only explicit `bind_pso()` calls emit `vkCmdBindPipeline`. Vulkan preserves native bindings across rendering boundaries,
+so semantic invalidation does not clear native state or diagnose a missing bind.
 
 `RenderingFlags::suspending` and `resuming` split one pass across independently recorded command buffers.
 Each segment repeats the rendering description and has its own begin/end pair; only the first loads

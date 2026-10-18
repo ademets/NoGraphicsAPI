@@ -464,7 +464,6 @@ struct DeviceDesc
     Format swapchain_format = Format::undefined;
     ColorSpace swapchain_color_space = ColorSpace::srgb;
     uint32 desired_swapchain_image_count = 2; // Vulkan: 1..8 presentation contexts. Metal clamps to 2..3 drawables.
-    bool steam_overlay_compatibility = false; // macOS only: allow drawable texture views and use classic Metal presentation.
     // Counts are capped to each family's capacity. A nonzero request requires that kind of queue to be available.
     uint32 desired_queue_count = 1; // General graphics + compute queues; must be nonzero.
     uint32 desired_compute_queue_count = 0;
@@ -769,7 +768,7 @@ void destroy_pso(PSO* pso) noexcept;
 
 // Pools retain command storage until destruction. Reset only after every submitted buffer from this pool completes; unsubmitted buffers are discarded.
 // Reset invalidates all previously returned CommandBuffer handles. Use one pool per worker and in-flight frame for independent recording/reuse.
-// Buffers from a pool must be submitted to the selected queue's family; Metal 3 requires that exact queue.
+// Buffers from a pool must be submitted to the selected queue's family.
 [[nodiscard]] CommandPool* create_command_pool(Device* device, uint32 queue_index = 0) noexcept;
 void destroy_command_pool(CommandPool* pool) noexcept;
 void reset_command_pool(CommandPool* pool) noexcept;
@@ -798,9 +797,11 @@ void write_timestamp(CommandBuffer* commands, uint64* cpu_destination, Stage sta
 // Call before resetting the pool; reset discards unread results. Unsubmitted buffers are ignored.
 void read_timestamps(CommandPool* pool) noexcept;
 
+// Every render pass starts with no graphics PSO. Bind one inside the pass before drawing, including every resumed segment.
+// Render-pass boundaries invalidate the current PSO selection; rebind a compute PSO before dispatching after a render pass.
 // Each segment needs matching attachments, load/store operations, and clear values, and its own begin/end_render_pass pair.
 // Submit the complete suspend/resume chain in order in one batch. No action or synchronization commands may occur between segments.
-// The first/last segments apply the requested load/store operations. Metal 3 preserves intermediate contents with native store/load passes.
+// The first/last segments apply the requested load/store operations.
 // Command-buffer bindings are not inherited.
 void begin_render_pass(CommandBuffer* commands, const RenderingDesc& desc, RenderingFlags flags = RenderingFlags::none) noexcept;
 void end_render_pass(CommandBuffer* commands) noexcept;
@@ -810,12 +811,13 @@ void set_viewport(CommandBuffer* commands, const Viewport& viewport) noexcept;
 void set_scissor(CommandBuffer* commands, const Scissor& scissor) noexcept;
 void set_depth_stencil(CommandBuffer* commands, const DepthStencilState& state) noexcept;
 
+// Bind graphics/mesh PSOs inside an active render pass; bind compute PSOs outside render passes.
 void bind_pso(CommandBuffer* commands, const PSO* pso) noexcept;
 
 // root uses the shared constant-buffer layout and a 16-byte-aligned GPU address, or nullptr for rootless shaders.
 // Retain its storage through GPU completion.
 // Finish CPU writes before submission; wait for prior GPU users before overwriting. Synchronize GPU writes before consuming the root.
-// Storage is application-owned; these commands do not copy root bytes or allocate memory. Metal 3 roots must belong to a GPU heap.
+// Storage is application-owned; these commands do not copy root bytes or allocate memory.
 void draw(CommandBuffer* commands, const void* root, uint32 vertex_count, uint32 instance_count = 1, uint32 first_vertex = 0,
           uint32 first_instance = 0) noexcept;
 void draw_indexed(CommandBuffer* commands, const void* root, GpuRange indices, IndexType type, uint32 index_count, uint32 instance_count = 1,

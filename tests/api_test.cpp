@@ -625,12 +625,12 @@ static_assert(__is_constructible(CommandBatch, std::initializer_list<gpu::Comman
     uint64 timestamps[2]{};
     gpu::write_timestamp(a, timestamps);
     gpu::write_timestamp(b, timestamps + 1, gpu::Stage::transfer);
-    gpu::bind_pso(a, pso);
     gpu::set_texture_descriptor_heap(a, texture_descriptors);
     gpu::set_sampler_descriptor_heap(a, sampler_descriptors);
     gpu::begin_render_pass(a, {
                                   .colors = {{.render_view = render_view}},
                               });
+    gpu::bind_pso(a, pso);
     gpu::set_viewport(a, {});
     gpu::set_scissor(a, {});
     gpu::set_depth_stencil(a, {});
@@ -641,6 +641,7 @@ static_assert(__is_constructible(CommandBatch, std::initializer_list<gpu::Comman
     gpu::draw_meshlets(a, root, {.x = 1, .y = 1, .z = 1});
     if (caps.indirect_mesh_draw) gpu::draw_meshlets_indirect(a, root, range);
     gpu::end_render_pass(a);
+    gpu::bind_pso(a, compute);
     gpu::dispatch(a, root, {.x = 1, .y = 1, .z = 1});
     gpu::dispatch_indirect(a, root, range);
     gpu::copy_memory(a, range, range);

@@ -313,7 +313,7 @@ static_assert(sizeof(gpu::TextureFormatInfo) == 16 &&
               offsetof(gpu::TextureFormatInfo, bytes_per_block) == 8 &&
               offsetof(gpu::TextureFormatInfo, stencil) == 13);
 static_assert(sizeof(gpu::SwapchainFrame) == 16 && offsetof(gpu::SwapchainFrame, extent) == 8);
-static_assert(sizeof(gpu::TextureDesc) == 36 && offsetof(gpu::TextureDesc, extent) == 4 && offsetof(gpu::TextureDesc, aliasable) == 32);
+static_assert(sizeof(gpu::TextureDesc) == 32 && offsetof(gpu::TextureDesc, extent) == 4 && offsetof(gpu::TextureDesc, usage) == 28);
 static_assert(sizeof(gpu::TextureCopyDesc) == 56 && offsetof(gpu::TextureCopyDesc, offset) == 12 &&
               offsetof(gpu::TextureCopyDesc, extent) == 24);
 static_assert(sizeof(gpu::Viewport) == 24 && alignof(gpu::Viewport) == 4 &&
@@ -498,7 +498,8 @@ using DestroyGpuHeapFunction = void (*)(const gpu::GpuHeap&) noexcept;
 using CreateTextureHeapFunction = gpu::TextureHeap (*)(gpu::Device*, uint64) noexcept;
 using DestroyTextureHeapFunction = void (*)(const gpu::TextureHeap&) noexcept;
 using GetTextureSizeAlignFunction = gpu::SizeAlign (*)(gpu::Device*, const gpu::TextureDesc&) noexcept;
-using CreateTextureFunction = gpu::Texture* (*)(gpu::CommandBuffer*, const gpu::TextureDesc&, const gpu::TextureHeap&, uint64) noexcept;
+using CreateTextureFunction = gpu::Texture* (*)(gpu::Device*, const gpu::TextureDesc&, const gpu::TextureHeap&, uint64) noexcept;
+using InitializeTextureFunction = void (*)(gpu::CommandBuffer*, gpu::Texture*) noexcept;
 using CreateDeviceFunction = gpu::DeviceInit (*)(const gpu::DeviceDesc&) noexcept;
 using GetDrawableExtentFunction = gpu::uint32x2 (*)(gpu::Device*) noexcept;
 using AcquireFunction = gpu::SwapchainFrame (*)(gpu::CommandBuffer*) noexcept;
@@ -534,6 +535,7 @@ static_assert(gpu::detail::is_same_v<decltype(&gpu::create_texture_heap), Create
 static_assert(gpu::detail::is_same_v<decltype(&gpu::destroy_texture_heap), DestroyTextureHeapFunction>);
 static_assert(gpu::detail::is_same_v<decltype(&gpu::get_texture_size_align), GetTextureSizeAlignFunction>);
 static_assert(gpu::detail::is_same_v<decltype(&gpu::create_texture), CreateTextureFunction>);
+static_assert(gpu::detail::is_same_v<decltype(&gpu::initialize_texture), InitializeTextureFunction>);
 static_assert(gpu::detail::is_same_v<decltype(&gpu::create_device), CreateDeviceFunction>);
 static_assert(gpu::detail::is_same_v<decltype(&gpu::get_drawable_extent), GetDrawableExtentFunction>);
 static_assert(gpu::detail::is_same_v<decltype(&gpu::acquire), AcquireFunction>);
@@ -603,7 +605,8 @@ static_assert(__is_constructible(CommandBatch, std::initializer_list<gpu::Comman
 
     const gpu::SizeAlign texture_size_align = gpu::get_texture_size_align(device, {});
     gpu::TextureHeap texture_heap = gpu::create_texture_heap(device, texture_size_align.size);
-    gpu::Texture* created_texture = gpu::create_texture(commands, {}, texture_heap, 0);
+    gpu::Texture* created_texture = gpu::create_texture(device, {}, texture_heap, 0);
+    gpu::initialize_texture(commands, created_texture);
     gpu::RenderView* created_render_view = gpu::create_render_view(texture);
     gpu::write_texture_descriptor(texture_descriptors, 0, texture, gpu::TextureDescriptorType::sampled);
     gpu::write_sampler_descriptor(sampler_descriptors, 0);

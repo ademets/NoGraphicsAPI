@@ -505,16 +505,23 @@ bool test_placed_textures(gpu::Device* device, const gpu::DeviceCaps& caps, gpu:
 
     const uint64 heap_size = heap_elements * texture_heap_alignment;
     gpu::TextureHeap texture_heap = gpu::create_texture_heap(device, heap_size);
+    gpu::Texture* first = gpu::create_texture(device, first_desc, texture_heap, 0);
+    gpu::Texture* second = gpu::create_texture(device, second_desc, texture_heap, second_offset);
+    gpu::Texture* broad_3d = has_broad_3d ? gpu::create_texture(device, broad_3d_desc, texture_heap, broad_3d_offset) : nullptr;
+    gpu::Texture* mutable_texture = gpu::create_texture(device, mutable_desc, texture_heap, mutable_offset);
+    gpu::Texture* compressed = has_compressed ? gpu::create_texture(device, compressed_desc, texture_heap, compressed_offset) : nullptr;
+    gpu::Texture* color = has_color ? gpu::create_texture(device, color_desc, texture_heap, color_offset) : nullptr;
+    gpu::Texture* depth_stencil =
+        has_depth_stencil ? gpu::create_texture(device, depth_stencil_desc, texture_heap, depth_stencil_offset) : nullptr;
     gpu::CommandPool* pool = gpu::create_command_pool(device);
     gpu::CommandBuffer* commands = gpu::begin_commands(pool);
-    gpu::Texture* first = gpu::create_texture(commands, first_desc, texture_heap, 0);
-    gpu::Texture* second = gpu::create_texture(commands, second_desc, texture_heap, second_offset);
-    gpu::Texture* broad_3d = has_broad_3d ? gpu::create_texture(commands, broad_3d_desc, texture_heap, broad_3d_offset) : nullptr;
-    gpu::Texture* mutable_texture = gpu::create_texture(commands, mutable_desc, texture_heap, mutable_offset);
-    gpu::Texture* compressed = has_compressed ? gpu::create_texture(commands, compressed_desc, texture_heap, compressed_offset) : nullptr;
-    gpu::Texture* color = has_color ? gpu::create_texture(commands, color_desc, texture_heap, color_offset) : nullptr;
-    gpu::Texture* depth_stencil =
-        has_depth_stencil ? gpu::create_texture(commands, depth_stencil_desc, texture_heap, depth_stencil_offset) : nullptr;
+    gpu::initialize_texture(commands, first);
+    gpu::initialize_texture(commands, second);
+    gpu::initialize_texture(commands, mutable_texture);
+    if (broad_3d) gpu::initialize_texture(commands, broad_3d);
+    if (compressed) gpu::initialize_texture(commands, compressed);
+    if (color) gpu::initialize_texture(commands, color);
+    if (depth_stencil) gpu::initialize_texture(commands, depth_stencil);
 #if defined(NDEBUG)
     if (sampled_depth_stencil)
     {

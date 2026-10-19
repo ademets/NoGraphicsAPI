@@ -345,27 +345,22 @@ void texture_failures(gpu::Device* device) noexcept
     check(!failed.owner && !failed.size, "texture heap allocation failure returns an empty result");
     reported("vkAllocateMemory", initial, true);
     const gpu::TextureHeap heap = gpu::create_texture_heap(device, size.size);
-    gpu::CommandPool* pool = gpu::create_command_pool(device);
-    gpu::CommandBuffer* commands = pool ? gpu::begin_commands(pool) : nullptr;
-    check(heap.owner && commands, "texture creation resources recover");
-    if (heap.owner && commands)
+    check(heap.owner != nullptr, "texture heap creation recovers");
+    if (heap.owner)
     {
         const NativeResources before = live;
         const char* operations[]{"vkCreateImage", "vkBindImageMemory"};
         for (const char* operation : operations)
         {
             arm(operation);
-            check(!gpu::create_texture(commands, desc, heap, 0), "image creation or binding failure returns null");
+            check(!gpu::create_texture(device, desc, heap, 0), "image creation or binding failure returns null");
             reported(operation, before);
-            gpu::Texture* retry = gpu::create_texture(commands, desc, heap, 0);
+            gpu::Texture* retry = gpu::create_texture(device, desc, heap, 0);
             check(retry != nullptr, "image creation succeeds after failure");
-            gpu::end_commands(commands);
-            gpu::reset_command_pool(pool);
             gpu::destroy_texture(retry);
-            commands = gpu::begin_commands(pool);
             unchanged(before);
         }
-        gpu::Texture* texture = gpu::create_texture(commands, desc, heap, 0);
+        gpu::Texture* texture = gpu::create_texture(device, desc, heap, 0);
         check(texture != nullptr, "render view fixture texture is available");
         if (texture)
         {
@@ -376,14 +371,9 @@ void texture_failures(gpu::Device* device) noexcept
             gpu::RenderView* view = gpu::create_render_view(texture);
             check(view != nullptr, "render view creation succeeds after failure");
             gpu::destroy_render_view(view);
-            gpu::end_commands(commands);
-            gpu::reset_command_pool(pool);
             gpu::destroy_texture(texture);
-            commands = gpu::begin_commands(pool);
         }
-        gpu::end_commands(commands);
     }
-    gpu::destroy_command_pool(pool);
     gpu::destroy_texture_heap(heap);
     unchanged(initial);
 }
@@ -414,33 +404,26 @@ void utility_failures(gpu::Device* device) noexcept
     const gpu::SizeAlign size = gpu::get_texture_size_align(device, desc);
     const uint64 alignment = gpu::get_device_caps(device).texture_heap_alignment;
     const gpu::TextureHeap heap = gpu::create_texture_heap(device, (size.size + alignment - 1) & ~(alignment - 1));
-    gpu::CommandPool* pool = gpu::create_command_pool(device);
-    check(heap.owner && pool, "texture allocator failure fixture is available");
-    if (heap.owner && pool)
+    check(heap.owner != nullptr, "texture allocator failure fixture is available");
+    if (heap.owner)
     {
         gpu::TextureAllocator allocator(device, heap, 1);
         const char* operations[]{"vkCreateImage", "vkBindImageMemory"};
         for (const char* operation : operations)
         {
-            gpu::CommandBuffer* commands = gpu::begin_commands(pool);
-            check(commands != nullptr, "texture allocator initialization commands are available");
-            if (!commands) break;
             const NativeResources before = live;
             arm(operation);
-            gpu::PlacedTexture failed = allocator.allocate(commands, desc);
+            gpu::PlacedTexture failed = allocator.allocate(desc);
             check(!failed.texture && !failed.token, "failed texture creation returns an empty allocator result");
             reported(operation, before);
-            gpu::PlacedTexture retry = allocator.allocate(commands, desc);
+            gpu::PlacedTexture retry = allocator.allocate(desc);
             check(retry.texture != nullptr, "failed texture reservation is reusable in a one-slot heap");
-            check(!allocator.allocate(commands, desc).texture, "successful retry consumes the only texture reservation");
-            gpu::end_commands(commands);
-            gpu::reset_command_pool(pool);
+            check(!allocator.allocate(desc).texture, "successful retry consumes the only texture reservation");
             allocator.free(retry);
             check(!retry.texture && !retry.token, "freeing the successful retry restores an empty allocation");
             unchanged(before);
         }
     }
-    gpu::destroy_command_pool(pool);
     gpu::destroy_texture_heap(heap);
     unchanged(initial);
 }

@@ -148,7 +148,7 @@ allows eager heap creation, so `SizeAlign` deliberately exposes no memory-type b
 `get_texture_size_align()` reports a concrete texture's placement requirement.
 `DeviceCaps::texture_heap_alignment` is the common allocator granularity selected for the supported
 profile; it is not a Vulkan guarantee for arbitrary image create descriptions. Utility
-`TextureAllocator` uses that granularity and returns a POD `PlacedTexture`. Pass the aggregate back to
+`TextureAllocator` uses that granularity and returns a POD `PlacedTexture` containing an uninitialized texture. Pass the aggregate back to
 the same allocator after GPU use has completed. The API does not track texture-to-heap or
 texture-to-descriptor dependencies.
 
@@ -156,18 +156,16 @@ Texture upload and readback go through buffer-backed `GpuRange` values with
 `copy_memory_to_texture()` and `copy_texture_to_memory()`. The application retires texture-heap ranges
 with its submission timeline.
 
-`TextureDesc::aliasable` allows resident images and views to share a placement, with only one alias
-in use at a time. Reserve enough bytes and alignment for every image and use aliasable descriptions
-for both sizing and creation. Creation uses `VK_IMAGE_CREATE_ALIAS_BIT` and defers initialization.
-Descriptors and views can remain resident while the application selects the active alias.
+`create_texture(device, desc, heap, offset)` creates and binds an image without recording GPU commands.
+Views and descriptors can be created immediately. Before first GPU use, call `initialize_texture(commands, texture)`
+outside rendering to initialize its metadata with a whole-image `UNDEFINED` to `GENERAL` transition.
+This discards contents; clear or overwrite the texture before reading it.
 
-Before first use and each subsequent handoff, `activate_texture_alias()` records a global memory
-dependency followed by a whole-image discard transition from `UNDEFINED` to `GENERAL`. Record it
-outside rendering, after the previous alias's uses on the same queue; synchronize other queues with
-timeline waits. Clear or overwrite before reading: differently formatted aliases do not preserve
-each other's contents. The application manages overlapping ranges; the backend has no alias registry.
-Optional `before`/`after` stage masks narrow both the global dependency and image transition. They default to `Stage::all_commands`;
-cover every prior access to the overlapping storage and the new alias's first accesses when narrowing them.
+Textures can share a placement with disjoint periods of GPU use. Reserve enough bytes and alignment
+for every image, and reinitialize the incoming texture after writes through another alias. The caller
+must synchronize prior storage accesses and make writes available with ordinary barriers or timeline
+waits before initialization. Initialization orders its metadata work before subsequent texture accesses;
+it does not issue a global memory barrier. Views and descriptors remain resident, and the backend has no alias registry.
 See Vulkan's [memory aliasing rules](https://docs.vulkan.org/spec/latest/chapters/resources.html#resources-memory-aliasing).
 
 ## Root ABI
@@ -211,7 +209,7 @@ efficient rather than merely legal.
 
 The backend privately handles the two unavoidable cases:
 
-- a newly created image receives its initial `UNDEFINED` to `GENERAL` transition before first use;
+- `initialize_texture()` transitions a newly created or reused image from `UNDEFINED` to `GENERAL`;
 - swapchain images transition between `GENERAL` and `PRESENT_SRC_KHR` around presentation.
 
 Resource-free barriers do not imply automatic synchronization. Applications still issue a barrier

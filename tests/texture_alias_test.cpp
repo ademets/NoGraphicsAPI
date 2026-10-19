@@ -14,8 +14,10 @@ void record_alias(CommandBuffer* commands, Texture* const* textures, RenderView*
 {
     const uint32 mode = pass & 1u;
     const bool alternate = (pass & 2u) != 0;
-    if (pass & 2u) activate_texture_alias(commands, textures[mode]);
-    else activate_texture_alias(commands, textures[mode], Stage::color_output | Stage::transfer, Stage::color_output);
+    // Each readback already makes color writes available. The narrow handoff orders its final transfer reads before initialization.
+    if (pass & 2u) barrier(commands, Stage::all_commands, Access::color_write, Stage::all_commands, Access::color_write);
+    else barrier(commands, Stage::transfer, Access::none, Stage::color_output, Access::color_write);
+    initialize_texture(commands, textures[mode]);
     begin_render_pass(commands, {.colors = {{.render_view = views[mode], .load = LoadOp::clear,
         .clear = mode ? ClearColor{.x = alternate ? 0.5f : 2.5f, .y = alternate ? 1.0f : 12.5f, .z = 0.5f, .w = 1.0f}
                       : ClearColor{.x = alternate ? 0.0f : 1.0f, .y = alternate ? 1.0f : 0.0f, .z = 1.0f, .w = 1.0f}}}});
@@ -61,9 +63,9 @@ int main()
     Device* device = initialized.device;
     const TextureDesc descriptions[2]{
         {.extent = {.x = widths[0], .y = heights[0], .z = 1}, .format = Format::bgra8_srgb,
-            .usage = TextureUsage::sampled | TextureUsage::color_attachment | TextureUsage::transfer_source, .aliasable = true},
+            .usage = TextureUsage::sampled | TextureUsage::color_attachment | TextureUsage::transfer_source},
         {.extent = {.x = widths[1], .y = heights[1], .z = 1}, .format = Format::rgba16_float,
-            .usage = TextureUsage::sampled | TextureUsage::color_attachment | TextureUsage::transfer_source, .aliasable = true},
+            .usage = TextureUsage::sampled | TextureUsage::color_attachment | TextureUsage::transfer_source},
     };
     const SizeAlign sdr = get_texture_size_align(device, descriptions[0]);
     const SizeAlign hdr = get_texture_size_align(device, descriptions[1]);
@@ -71,17 +73,17 @@ int main()
     const TextureHeap heap = create_texture_heap(device, offset + (sdr.size > hdr.size ? sdr.size : hdr.size));
     const GpuHeap readback = create_gpu_heap(device, passes * readback_stride, MemoryType::readback);
     TextureDescriptorHeap* descriptors = create_texture_descriptor_heap(device, 2);
-    CommandPool* pool = create_command_pool(device);
-    TimelinePoint completion{.semaphore = create_timeline_semaphore(device)};
-    CommandBuffer* commands = begin_commands(pool);
     Texture* textures[2]{};
     RenderView* views[2]{};
     for (uint32 mode = 0; mode < 2; ++mode)
     {
-        textures[mode] = create_texture(commands, descriptions[mode], heap, offset);
+        textures[mode] = create_texture(device, descriptions[mode], heap, offset);
         views[mode] = create_render_view(textures[mode]);
         write_texture_descriptor(descriptors, mode, textures[mode], TextureDescriptorType::sampled);
     }
+    CommandPool* pool = create_command_pool(device);
+    TimelinePoint completion{.semaphore = create_timeline_semaphore(device)};
+    CommandBuffer* commands = begin_commands(pool);
     // Exercise batched handoffs, then separate submissions using the same handles and descriptors.
     for (uint32 pass = 0; pass < passes; ++pass) record_alias(commands, textures, views, readback, pass);
     barrier(commands, Stage::transfer, Access::transfer_write, Stage::host, Access::host_read);
@@ -113,6 +115,6 @@ int main()
     destroy_gpu_heap(readback);
     destroy_timeline_semaphore(completion.semaphore);
     destroy_device(device);
-    printf("Different-size SDR/HDR aliases, default/narrow barriers and queued handoffs: %s\n", valid ? "passed" : "failed");
+    printf("Texture creation without commands, SDR/HDR reinitialization and caller-synchronized handoffs: %s\n", valid ? "passed" : "failed");
     return valid ? 0 : 1;
 }

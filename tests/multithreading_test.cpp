@@ -173,8 +173,9 @@ void record_textures(void* argument) noexcept
 
     for (uint32 index = 0; index != textures_per_thread; ++index)
     {
-        context->textures[index] = gpu::create_texture(context->upload_commands, texture_desc, *context->texture_heap,
+        context->textures[index] = gpu::create_texture(context->device, texture_desc, *context->texture_heap,
                                                      (context->index * textures_per_thread + index) * context->texture_stride);
+        gpu::initialize_texture(context->upload_commands, context->textures[index]);
         context->views[index] = gpu::create_render_view(context->textures[index]);
         gpu::write_texture_descriptor(context->texture_descriptors, index, context->textures[index], gpu::TextureDescriptorType::sampled);
         gpu::write_sampler_descriptor(context->sampler_descriptors, index);

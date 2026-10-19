@@ -88,6 +88,8 @@ Opaque textures retain native creation metadata and views, but placement belongs
 `TextureHeap` is storage, separate from a texture descriptor heap. Vulkan selects one compatible
 GPU-only texture memory type; Metal uses private placement heaps. Placement requirements come from
 `get_texture_size_align`; the utility `TextureAllocator` manages reusable placements.
+Texture creation records no GPU commands. `initialize_texture` initializes metadata before first GPU use
+and after writes through an overlapping texture; applications synchronize storage reuse explicitly.
 
 Textures have no CPU mapping. Upload and readback use GPU address ranges, and their lifetimes follow
 submission timelines. The backend does not track texture-to-heap or texture-to-descriptor dependencies.

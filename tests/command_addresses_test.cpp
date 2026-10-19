@@ -39,8 +39,9 @@ int main()
     const gpu::TextureHeap heap = gpu::create_texture_heap(device, gpu::get_texture_size_align(device, desc).size);
     if (!heap.owner) return 1;
     gpu::CommandBuffer* commands = gpu::begin_commands(pool);
-    gpu::Texture* texture = gpu::create_texture(commands, desc, heap, 0);
+    gpu::Texture* texture = gpu::create_texture(device, desc, heap, 0);
     if (!texture) return 1;
+    gpu::initialize_texture(commands, texture);
     gpu::RenderView* view = gpu::create_render_view(texture);
     if (!view) return 1;
     gpu::copy_memory(commands, {.gpu = upload.range.gpu + 32, .size = 288}, {.gpu = arguments.range.gpu + 32, .size = 288});

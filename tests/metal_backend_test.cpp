@@ -42,9 +42,12 @@ bool test_heaps_and_roots(gpu::Device* device, gpu::TimelineSemaphore* timeline)
     gpu::CommandPool* pool = gpu::create_command_pool(device);
     gpu::CommandBuffer* commands = gpu::begin_commands(pool);
     const gpu::TextureHeap heap = gpu::create_texture_heap(device, storage_offset + storage_stride + storage_size.size);
-    gpu::Texture* sampled = gpu::create_texture(commands, sampled_desc, heap, 0);
-    gpu::Texture* storage = gpu::create_texture(commands, storage_desc, heap, storage_offset);
-    gpu::Texture* second_storage = gpu::create_texture(commands, storage_desc, heap, storage_offset + storage_stride);
+    gpu::Texture* sampled = gpu::create_texture(device, sampled_desc, heap, 0);
+    gpu::Texture* storage = gpu::create_texture(device, storage_desc, heap, storage_offset);
+    gpu::Texture* second_storage = gpu::create_texture(device, storage_desc, heap, storage_offset + storage_stride);
+    gpu::initialize_texture(commands, sampled);
+    gpu::initialize_texture(commands, storage);
+    gpu::initialize_texture(commands, second_storage);
     gpu::TextureDescriptorHeap* source_views = gpu::create_texture_descriptor_heap(device, 4);
     gpu::TextureDescriptorHeap* views = gpu::create_texture_descriptor_heap(device, 32);
     gpu::SamplerDescriptorHeap* source_samplers = gpu::create_sampler_descriptor_heap(device, 4);
@@ -147,7 +150,8 @@ bool test_draws(gpu::Device* device, gpu::TimelineSemaphore* timeline)
     {
         desc.format = i ? gpu::Format::bgra8_srgb : gpu::Format::rgba8_unorm;
         heaps[i] = gpu::create_texture_heap(device, gpu::get_texture_size_align(device, desc).size);
-        colors[i] = gpu::create_texture(commands, desc, heaps[i], 0);
+        colors[i] = gpu::create_texture(device, desc, heaps[i], 0);
+        gpu::initialize_texture(commands, colors[i]);
         views[i] = gpu::create_render_view(colors[i]);
     }
     const gpu::GpuHeap arguments = gpu::create_gpu_heap(device, 256);
@@ -255,7 +259,8 @@ bool test_viewports_and_culling(gpu::Device* device, gpu::TimelineSemaphore* tim
     gpu::CommandPool* pool = gpu::create_command_pool(device);
     gpu::CommandBuffer* commands = gpu::begin_commands(pool);
     const gpu::TextureHeap heap = gpu::create_texture_heap(device, gpu::get_texture_size_align(device, desc).size);
-    gpu::Texture* color = gpu::create_texture(commands, desc, heap, 0);
+    gpu::Texture* color = gpu::create_texture(device, desc, heap, 0);
+    gpu::initialize_texture(commands, color);
     gpu::RenderView* view = gpu::create_render_view(color);
     const gpu::GpuHeap indices = gpu::create_gpu_heap(device, 32 + sizeof(gpu::ClearColor));
     *reinterpret_cast<gpu::ClearColor*>(indices.range.cpu + 32) = {.x = 1, .w = 1};

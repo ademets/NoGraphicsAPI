@@ -13,7 +13,8 @@ static bool check(Device* device, TimelineSemaphore* timeline, uint64& value, Te
     CommandPool* pool = create_command_pool(device);
     CommandBuffer* commands = begin_commands(pool);
     const TextureHeap heap = create_texture_heap(device, required.size);
-    Texture* texture = create_texture(commands, desc, heap, 0);
+    Texture* texture = create_texture(device, desc, heap, 0);
+    initialize_texture(commands, texture);
     const GpuHeap upload = create_gpu_heap(device, 4096);
     const GpuHeap readback = create_gpu_heap(device, 4096, MemoryType::readback);
     for (uint32 i = 0; i < 4096; ++i) upload.range.cpu[i] = byte(i * 17 + i / 16);

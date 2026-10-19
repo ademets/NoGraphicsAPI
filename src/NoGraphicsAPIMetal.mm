@@ -827,12 +827,11 @@ SizeAlign get_texture_size_align(Device* device, const TextureDesc& desc) noexce
     }
 }
 
-Texture* create_texture(CommandBuffer* commands, const TextureDesc& desc, const TextureHeap& heap, uint64 offset) noexcept
+Texture* create_texture(Device* device, const TextureDesc& desc, const TextureHeap& heap, uint64 offset) noexcept
 {
     @autoreleasepool
     {
-        Device* device = commands->device;
-        assert(commands->recording && !commands->render && heap.owner && heap.owner->device == device);
+        assert(device && heap.owner && heap.owner->device == device);
         MTLTextureDescriptor* descriptor = texture_descriptor(desc);
         id<MTLTexture> texture = [heap.owner->heap newTextureWithDescriptor:descriptor offset:offset];
         [descriptor release];
@@ -853,10 +852,11 @@ void destroy_texture(Texture* texture) noexcept
     }
 }
 
-void activate_texture_alias(CommandBuffer* commands, Texture* texture, Stage before, Stage after) noexcept
+void initialize_texture(CommandBuffer* commands, Texture* texture) noexcept
 {
-    assert(commands && texture && commands->device == texture->device && texture->desc.aliasable);
-    barrier(commands, before, Access::transfer_write | Access::shader_write | Access::color_write | Access::depth_stencil_write, after, Access::none);
+    assert(commands && texture && commands->device == texture->device && commands->recording && !commands->render);
+    (void)commands;
+    (void)texture;
 }
 
 RenderView* create_render_view(Texture* texture, const RenderViewDesc& desc) noexcept

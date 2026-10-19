@@ -39,8 +39,9 @@ static bool test_shader_abi(gpu::Device* device)
     gpu::CommandBuffer* commands = gpu::begin_commands(pool);
     for (uint32 i = 0; i != shader_abi_thread_count; ++i)
     {
-        textures[i] = gpu::create_texture(commands, desc, texture_heap, stride * i);
+        textures[i] = gpu::create_texture(device, desc, texture_heap, stride * i);
         if (!textures[i]) return false;
+        gpu::initialize_texture(commands, textures[i]);
         gpu::write_texture_descriptor(source_views, i, textures[i], gpu::TextureDescriptorType::sampled);
         gpu::write_sampler_descriptor(source_samplers, i,
             {.min_filter = gpu::Filter::nearest, .mag_filter = gpu::Filter::nearest,

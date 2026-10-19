@@ -362,7 +362,10 @@ void update_descriptors(void* argument) noexcept
         if (iteration == 0)
         {
             for (uint32 i = 0; i < 4; ++i)
-                textures[i] = gpu::create_texture(commands, texture_desc, *worker.heap, (worker.queue * 4 + i) * worker.texture_stride);
+            {
+                textures[i] = gpu::create_texture(worker.device, texture_desc, *worker.heap, (worker.queue * 4 + i) * worker.texture_stride);
+                gpu::initialize_texture(commands, textures[i]);
+            }
             for (uint32 i = 0; i < 2; ++i)
                 gpu::copy_memory_to_texture(commands, {.gpu = upload.range.gpu + i * texture_bytes, .size = texture_bytes}, textures[i]);
         }

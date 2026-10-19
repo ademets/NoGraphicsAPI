@@ -184,8 +184,9 @@ bool initialize(Fixture& fixture) noexcept
     };
     fixture.texture_heap = gpu::create_texture_heap(fixture.device, gpu::get_texture_size_align(fixture.device, target_desc).size);
     gpu::CommandBuffer* commands = gpu::begin_commands(fixture.readback_pool);
-    fixture.target = gpu::create_texture(commands, target_desc, fixture.texture_heap, 0);
+    fixture.target = gpu::create_texture(fixture.device, target_desc, fixture.texture_heap, 0);
     if (!fixture.target) return false;
+    gpu::initialize_texture(commands, fixture.target);
     fixture.view = gpu::create_render_view(fixture.target);
     if (!fixture.view) return false;
     gpu::end_commands(commands);

@@ -136,8 +136,9 @@ static bool initialize(Fixture& fixture)
     CommandBuffer* initialization = begin_commands(fixture.pool);
     for (uint32 index = 0; index < texture_count; ++index)
     {
-        fixture.textures[index] = create_texture(initialization, fixture.descriptions[index], fixture.texture_heap, offsets[index]);
+        fixture.textures[index] = create_texture(fixture.device, fixture.descriptions[index], fixture.texture_heap, offsets[index]);
         if (!fixture.textures[index]) return false;
+        initialize_texture(initialization, fixture.textures[index]);
     }
     end_commands(initialization);
     submit(fixture.device, {.commands = {initialization},

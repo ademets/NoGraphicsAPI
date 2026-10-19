@@ -58,8 +58,10 @@ static bool initialize(Fixture& fixture) noexcept
     const uint64 second_offset = (placement.size + placement.align - 1) / placement.align * placement.align;
     fixture.texture_heap = create_texture_heap(fixture.device, second_offset + placement.size);
     CommandBuffer* commands = begin_commands(fixture.pools[0]);
-    fixture.textures[0] = create_texture(commands, description, fixture.texture_heap, 0);
-    fixture.textures[1] = create_texture(commands, description, fixture.texture_heap, second_offset);
+    fixture.textures[0] = create_texture(fixture.device, description, fixture.texture_heap, 0);
+    fixture.textures[1] = create_texture(fixture.device, description, fixture.texture_heap, second_offset);
+    initialize_texture(commands, fixture.textures[0]);
+    initialize_texture(commands, fixture.textures[1]);
     fixture.target = create_render_view(fixture.textures[1]);
     write_texture_descriptor(fixture.descriptors, 0, fixture.textures[0], TextureDescriptorType::sampled);
     write_texture_descriptor(fixture.descriptors, 1,

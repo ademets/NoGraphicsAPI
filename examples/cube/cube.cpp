@@ -129,12 +129,13 @@ int main() {
 	CommandBuffer* texture_commands = begin_commands(command_pools[0]);
 
 	// Textures
-	PlacedTexture texture = texture_allocator.allocate(texture_commands, {
+	PlacedTexture texture = texture_allocator.allocate({
 		.extent = {.x = texture_width, .y = texture_height, .z = 1},
 		.format = Format::rgba8_srgb,
 		.usage = TextureUsage::sampled | TextureUsage::transfer_destination,
 	});
 
+	initialize_texture(texture_commands, texture.texture);
 	write_texture_descriptor(texture_descriptor_heap, 0, texture.texture, TextureDescriptorType::sampled);
 	write_sampler_descriptor(sampler_descriptor_heap, 0, {
 		.min_filter = Filter::nearest,
@@ -175,11 +176,12 @@ int main() {
 				wait_timeline(latest_completion);
 			destroy_render_view(depth_render_view);
 			texture_allocator.free(depth);
-			depth = texture_allocator.allocate(commands, {
+			depth = texture_allocator.allocate({
 				.extent = {.x = frame.extent.x, .y = frame.extent.y, .z = 1},
 				.format = Format::d32_float,
 				.usage = TextureUsage::depth_stencil_attachment,
 			});
+			initialize_texture(commands, depth.texture);
 			depth_render_view = create_render_view(depth.texture);
 			depth_extent = frame.extent;
 		}

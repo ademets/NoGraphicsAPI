@@ -81,8 +81,9 @@ static bool initialize(Fixture& fixture) noexcept
     fixture.texture_heap = gpu::create_texture_heap(fixture.device, gpu::get_texture_size_align(fixture.device, target_desc).size);
     fixture.pool = gpu::create_command_pool(fixture.device);
     gpu::CommandBuffer* commands = gpu::begin_commands(fixture.pool);
-    fixture.target = gpu::create_texture(commands, target_desc, fixture.texture_heap, 0);
+    fixture.target = gpu::create_texture(fixture.device, target_desc, fixture.texture_heap, 0);
     if (!fixture.target) return false;
+    gpu::initialize_texture(commands, fixture.target);
     fixture.view = gpu::create_render_view(fixture.target);
     if (!fixture.view) return false;
     fixture.completion.semaphore = gpu::create_timeline_semaphore(fixture.device);

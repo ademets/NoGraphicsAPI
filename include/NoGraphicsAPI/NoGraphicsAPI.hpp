@@ -776,9 +776,10 @@ void submit(Device* device, const SubmitDesc& desc, uint32 queue_index = 0) noex
 void set_texture_descriptor_heap(CommandBuffer* commands, TextureDescriptorHeap* heap) noexcept;
 void set_sampler_descriptor_heap(CommandBuffer* commands, SamplerDescriptorHeap* heap) noexcept;
 
-// Initialize whole-texture metadata outside a render pass before first GPU use and again after writes through an overlapping texture.
-// Synchronize prior storage accesses and make their writes available with barriers or timeline waits first. Clear or overwrite before reading.
-// Discards contents and orders initialization before subsequent texture accesses on this queue.
+// Initialize whole-texture metadata outside a render pass before first GPU use and before reuse after writes through an alias.
+// Texture aliasing uses overlapping placements in one TextureHeap; no creation flag is required.
+// Synchronize prior storage accesses and make their writes available with barriers or timeline waits first; these do not initialize metadata.
+// Discards contents; clear or overwrite before reading. Orders initialization before subsequent texture accesses on this queue.
 void initialize_texture(CommandBuffer* commands, Texture* texture) noexcept;
 
 // Command GPU ranges must lie within one GPU heap.

@@ -126,21 +126,22 @@ def main():
         def native_path(field):
             typename = native_root
             members = []
+            offsets = []
             for part in field.split("."):
                 name = part.removesuffix("[0]")
                 declaration = next(line for line in native_structs[typename].split(";")
                                    if re.search(r"\b" + name + r"_\d+\s*$", line))
                 native_name = re.search(r"\b(" + name + r"_\d+)\s*$", declaration)[1]
                 members.append(native_name + ("[0]" if part.endswith("[0]") else ""))
-                typename = declaration.strip().split()[0]
-            return ".".join(members)
+                offsets.append(f"__builtin_offsetof({typename}, {native_name})")
+                typename = re.match(r"\s*(?:array\s*<\s*)?(\w+)", declaration)[1]
+            return ".".join(members), " + ".join(offsets)
 
         assertions = [f'static_assert(sizeof({native_root}) == {layouts[root]["@"][0]}, "{root} size");']
         for field in paths[root]:
-            native = native_path(field)
+            native, native_offset = native_path(field)
             offset, size = layouts[root][field]
-            if "[" not in field:
-                assertions.append(f'static_assert(__builtin_offsetof({native_root}, {native}) == {offset}, "{root}.{field} offset");')
+            assertions.append(f'static_assert({native_offset} == {offset}, "{root}.{field} offset");')
             assertions.append(f'static_assert(sizeof((({native_root} constant*)0)->{native}) == {size}, "{root}.{field} size/stride");')
         metal.write_text(text + "\n" + "\n".join(assertions) + "\n")
         run(["xcrun", "-sdk", "macosx", "metal", "-std=metal4.0", "-target", "air64-apple-macosx26.0",

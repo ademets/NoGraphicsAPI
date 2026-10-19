@@ -20,10 +20,9 @@ Add `-E '^test_render_continuation$'` to run the remaining checks separately.
 Coverage includes shared root layouts, GPU pointers, descriptor indexing/copies, direct and indirect
 commands, texture transfers, viewport orientation, presentation and command-pool reuse. Triangle,
 cube and deferred-renderer examples run with Metal API validation.
-Presentation tests cover direct Metal 4 presentation with two and three drawables, two frames in flight,
-resize after idle, shutdown and the layer's framebuffer-only setting. They do not load Steam or validate overlay composition.
-The tested macOS Steam client does not compose its overlay on this path. Overlay acceptance requires client support
-and a test of the installed game; passing native presentation tests does not establish that support.
+Presentation tests cover default and Steam-compatible modes with two and three drawables, two frames in flight,
+resize after idle, shutdown and the layer's framebuffer-only setting. Native execution of the Steam-compatible cases remains pending.
+The tests do not load Steam; overlay composition must also be checked in the installed game with `steam_overlay_compatibility` enabled.
 
 ## Concurrency and lifetime
 

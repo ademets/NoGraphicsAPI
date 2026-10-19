@@ -2,6 +2,7 @@
 #include "BufferAddressMap.hpp"
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#include <TargetConditionals.h>
 #include <mach/mach_time.h>
 #include <os/lock.h>
 #include <assert.h>
@@ -303,6 +304,7 @@ struct Device
     Queue* queues = nullptr;
     id<MTL4Compiler> compiler = nil;
     id<MTLResidencySet> residency = nil;
+    id<MTLCommandQueue> presentation_queue = nil;
     CAMetalLayer* layer = nil;
     id<CAMetalDrawable> drawable = nil;
     CommandBuffer* acquired = nullptr;
@@ -600,6 +602,19 @@ DeviceInit create_device(const DeviceDesc& desc) noexcept
             device->layer.maximumDrawableCount = desc.desired_swapchain_image_count < 3 ? 2 : 3;
             [device->queues[0].queue addResidencySet:device->layer.residencySet];
             device->layer.framebufferOnly = YES;
+#if TARGET_OS_OSX
+            if (desc.steam_overlay_compatibility)
+            {
+                device->layer.framebufferOnly = NO;
+                device->presentation_queue = [device->metal newCommandQueue];
+                if (!device->presentation_queue)
+                {
+                    report_error("presentation queue", nil);
+                    destroy_device(device);
+                    return {.error = Error::driver_error};
+                }
+            }
+#endif
         }
         return {.device = device};
     }
@@ -613,6 +628,7 @@ void destroy_device(Device* device) noexcept
         assert(!device->drawable);
         if (device->layer) [device->queues[0].queue removeResidencySet:device->layer.residencySet];
         [device->drawable release];
+        [device->presentation_queue release];
         [device->layer release];
         for (uint32 i = 0; i < device->caps.queue_count; ++i)
         {
@@ -733,6 +749,12 @@ void wait_idle(Device* device) noexcept
             [device->queues[i].queue signalEvent:device->queues[i].completion value:++device->queues[i].submitted_value];
         for (uint32 i = 0; i < device->caps.queue_count; ++i)
             while (![device->queues[i].completion waitUntilSignaledValue:device->queues[i].submitted_value timeoutMS:1000]) {}
+        if (device->presentation_queue)
+        {
+            id<MTLCommandBuffer> drained = [device->presentation_queue commandBuffer];
+            [drained commit];
+            [drained waitUntilCompleted];
+        }
     }
 }
 
@@ -1338,8 +1360,19 @@ void submit_and_present(Device* device, const SubmitDesc& desc) noexcept
         assert(found);
         [device->queues[0].queue waitForDrawable:device->drawable];
         submit(device, desc, 0);
-        [device->queues[0].queue signalDrawable:device->drawable];
-        [device->drawable present];
+        if (device->presentation_queue)
+        {
+            // Steam's macOS overlay hooks command-buffer presentation, including frames rendered with Metal 4.
+            id<MTLCommandBuffer> presentation = [device->presentation_queue commandBuffer];
+            [presentation encodeWaitForEvent:device->queues[0].completion value:device->queues[0].submitted_value];
+            [presentation presentDrawable:device->drawable];
+            [presentation commit];
+        }
+        else
+        {
+            [device->queues[0].queue signalDrawable:device->drawable];
+            [device->drawable present];
+        }
         [device->drawable release];
         device->acquired->acquired = false;
         device->acquired = nullptr;

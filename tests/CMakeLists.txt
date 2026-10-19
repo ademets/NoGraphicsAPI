@@ -346,7 +346,10 @@ endif()
 
 if(APPLE)
     add_test(NAME test_metal_presentation_triple COMMAND test_metal_presentation --triple)
-    set_tests_properties(test_metal_presentation test_metal_presentation_triple PROPERTIES
+    add_test(NAME test_metal_presentation_steam_overlay COMMAND test_metal_presentation --steam-overlay)
+    add_test(NAME test_metal_presentation_steam_overlay_triple COMMAND test_metal_presentation --steam-overlay --triple)
+    set_tests_properties(test_metal_presentation test_metal_presentation_triple
+        test_metal_presentation_steam_overlay test_metal_presentation_steam_overlay_triple PROPERTIES
         SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "Validation Error;NoGraphicsAPI validation:"
         ENVIRONMENT "MTL_DEBUG_LAYER=1;MTL_SHADER_VALIDATION=0")
 endif()

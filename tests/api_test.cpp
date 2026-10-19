@@ -349,6 +349,7 @@ constexpr gpu::DeviceDesc default_device_desc{};
 static_assert(default_device_desc.window == nullptr &&
               default_device_desc.swapchain_format == gpu::Format::undefined &&
               default_device_desc.desired_swapchain_image_count == 2 && default_device_desc.desired_queue_count == 1 &&
+              !default_device_desc.steam_overlay_compatibility &&
               default_device_desc.desired_compute_queue_count == 0 && default_device_desc.desired_copy_queue_count == 0 &&
               default_device_desc.timestamp_query_count == 256);
 constexpr gpu::uint32x2 default_uint32x2{};
@@ -577,6 +578,7 @@ static_assert(__is_constructible(CommandBatch, std::initializer_list<gpu::Comman
         .window = native_window,
         .swapchain_format = gpu::Format::bgra8_srgb,
         .desired_swapchain_image_count = 3,
+        .steam_overlay_compatibility = true,
         .timestamp_query_count = 513,
     });
     const gpu::DeviceCaps& caps = gpu::get_device_caps(device);

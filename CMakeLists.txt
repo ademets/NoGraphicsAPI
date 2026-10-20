@@ -147,7 +147,8 @@ if(CMAKE_GENERATOR MATCHES "^Visual Studio" AND NOGRAPHICSAPI_BUILD_EXAMPLES)
             example_triangle
             example_cube
             example_deferred_renderer
-            example_advanced_deferred_renderer)
+            example_advanced_deferred_renderer
+            example_profiled_deferred_renderer)
         get_target_property(example_binary_dir ${example_target} BINARY_DIR)
         set_target_properties(${example_target} PROPERTIES
             VS_DEBUGGER_WORKING_DIRECTORY "${example_binary_dir}"

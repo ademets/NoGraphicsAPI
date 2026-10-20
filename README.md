@@ -246,6 +246,7 @@ the library without examples and tests.
 - [Deferred renderer](examples/deferred_renderer/deferred_renderer.cpp) — compute simulation and mesh-shader rendering.
 - [Advanced deferred renderer](examples/advanced_deferred_renderer/advanced_deferred_renderer.cpp) — four times as many cubes with a cycling color spectrum.
 - [Profiled deferred renderer](examples/profiled_deferred_renderer/README.md) — the same scene with CPU/GPU pass timings and Perfetto capture export.
+- [Helix Nebula](examples/helix_nebula/README.md) — procedural volumetric gas, radial filaments, and stars from a GPU-pointer root.
 
 The executables are under `build-msvc/examples/<example>/Release` when using the supplied preset.
 

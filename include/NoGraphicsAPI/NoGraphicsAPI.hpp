@@ -19,6 +19,7 @@ struct uint32x3
 };
 
 struct Device;
+struct VulkanSurfaceDesc;
 struct CommandPool;
 struct Texture;
 struct RenderView;
@@ -457,10 +458,12 @@ enum class ColorSpace : uint32 { srgb, extended_srgb_linear };
 
 // Win32 windowed device lifecycle, swapchain format/extent changes, acquire, and presentation stay on the window's message-pump thread.
 // Metal calls may use a render thread; synchronize CAMetalLayer access with native UI/layer changes.
+// External Vulkan surfaces follow the application's window-thread contract; synchronize drawable updates with acquire/present.
 // The window/layer must outlive the device. Other calls follow the object-level threading contract below.
 struct DeviceDesc
 {
-    void* window = nullptr; // HWND on Windows; CAMetalLayer* on macOS/iOS. Null creates a headless device.
+    void* window = nullptr; // HWND on Windows; CAMetalLayer* on macOS/iOS. Both window and vulkan_surface null creates a headless device.
+    const VulkanSurfaceDesc* vulkan_surface = nullptr; // Vulkan only; see vulkan.hpp. Mutually exclusive with window.
     Format swapchain_format = Format::undefined;
     ColorSpace swapchain_color_space = ColorSpace::srgb;
     uint32 desired_swapchain_image_count = 2; // Vulkan: 1..8 presentation contexts. Metal clamps to 2..3 drawables.

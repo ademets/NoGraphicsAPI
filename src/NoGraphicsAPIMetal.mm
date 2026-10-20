@@ -509,6 +509,7 @@ id<MTLBuffer> resolve_buffer(Device* device, GpuRange range, uint64* offset)
 
 DeviceInit create_device(const DeviceDesc& desc) noexcept
 {
+    if (desc.vulkan_surface) return {.error = Error::unsupported};
     if (desc.swapchain_color_space != ColorSpace::srgb)
     {
         report_error("unsupported swapchain color space", nil);

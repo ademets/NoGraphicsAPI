@@ -11,7 +11,7 @@ int main()
     constexpr uint32 height = 512;
 
     void* window = open_example_window("NoGraphicsAPI triangle", width, height);
-    Device* device = create_device({.window = window, .swapchain_format = Format::bgra8_srgb}).device;
+    Device* device = create_example_device(window).device;
 
     if (!window || !device)
     {
@@ -41,7 +41,7 @@ int main()
     TimelinePoint latest_completion{ .semaphore = create_timeline_semaphore(device) };
     CommandPool* command_pools[] = {create_command_pool(device), create_command_pool(device)};
 
-    while (pump_example_window(window))
+    while (pump_example_window(window, device))
     {
         if (latest_completion.value >= 2)
             wait_timeline({.semaphore = latest_completion.semaphore, .value = latest_completion.value - 1});

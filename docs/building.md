@@ -1,13 +1,13 @@
 # Building and integration
 
-See the README for [Windows](../README.md#windows-installation-and-quick-start),
+See the README for [Linux](../README.md#linux-installation-and-quick-start), [Windows](../README.md#windows-installation-and-quick-start),
 [macOS](../README.md#macos-installation-and-quick-start), and [hardware requirements](../README.md#hardware-requirements).
 CMake selects native Metal 4 on Apple platforms and Vulkan elsewhere. Apple devices require OS 26+ and Apple GPU family 7 or newer.
 
 | Target | Toolchain |
 | --- | --- |
 | Windows x86-64 | MSVC or clang-cl. |
-| Linux x86-64 | GCC or Clang; headless library and tests. |
+| Linux x86-64 | GCC or Clang; SDL 3.2+ for windowed examples. |
 | macOS 26+ ARM64 | Xcode 26+ SDK and Metal compiler. |
 | iOS/iPadOS 26+ ARM64 | Xcode 26+ with the device SDK. |
 
@@ -30,6 +30,10 @@ Debug Vulkan builds enable validation when installed. Metal validation is opt-in
 `MTL_DEBUG_LAYER=1`; see [Metal validation](metal-validation.md) for supported instrumentation and known driver issues.
 Apple example/test shader builds require stock Slang 2026.18.2+ and Xcode's Metal compiler. Vulkan shader builds require
 Slang 2026.14.1+ and SPIRV-Tools 2026.3+. Shader tools are not required for a library-only build.
+
+Linux examples use SDL3 for native Wayland or X11 windows; the core library has no SDL dependency.
+With examples and tests enabled, CTest also builds a native Wayland presentation test, skipped when no Wayland display is available.
+To select Wayland explicitly, run `SDL_VIDEODRIVER=wayland build/examples/triangle/example_triangle`.
 
 For iOS, disable desktop examples and tests and select the device SDK:
 

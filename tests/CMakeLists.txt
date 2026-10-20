@@ -1,6 +1,16 @@
 include(${PROJECT_SOURCE_DIR}/examples/NoGraphicsAPI_slang.cmake)
 find_package(Threads REQUIRED)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOGRAPHICSAPI_BUILD_EXAMPLES)
+    add_executable(test_wayland_presentation wayland_presentation_test.cpp)
+    NoGraphicsAPI_disable_exceptions(test_wayland_presentation)
+    target_link_libraries(test_wayland_presentation PRIVATE NoGraphicsAPI::NoGraphicsAPI SDL3::SDL3)
+    add_test(NAME test_wayland_presentation COMMAND test_wayland_presentation)
+    set_tests_properties(test_wayland_presentation PROPERTIES
+        SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "Validation Error;NoGraphicsAPI validation:"
+        ENVIRONMENT "SDL_VIDEODRIVER=wayland" RUN_SERIAL TRUE)
+endif()
+
 add_executable(test_shader_types shader_types_test.cpp)
 NoGraphicsAPI_disable_exceptions(test_shader_types)
 target_link_libraries(test_shader_types PRIVATE NoGraphicsAPIUtility::types)

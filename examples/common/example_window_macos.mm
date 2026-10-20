@@ -42,7 +42,7 @@ void* open_example_window(const char* title, uint32 width, uint32 height) noexce
     }
 }
 
-bool pump_example_window(void* window) noexcept
+bool pump_example_window(void* window, gpu::Device*) noexcept
 {
     @autoreleasepool
     {

@@ -12,9 +12,9 @@ The result has no public descriptor sets, descriptor pools, descriptor-set layou
 layouts, render passes, or framebuffers. Vulkan objects still exist where the driver requires them,
 but they do not shape the application-facing model.
 
-The current backend targets desktop Vulkan 1.4. MoltenVK is intentionally unsupported, and Win32 is
-the only presentation backend. Headless library builds are supported on the other configured
-desktop platforms.
+The current backend targets desktop Vulkan 1.4. MoltenVK is intentionally unsupported.
+Presentation accepts Win32 windows or application-created Vulkan surfaces, including native Wayland and X11.
+The core library has no window-system dependency.
 
 ## Vulkan feature surface
 
@@ -37,13 +37,26 @@ conventional feature checked by device creation.
 | 64-bit timestamps (optional) | Supported queues capture GPU markers; `read_timestamps(pool)` retrieves them into CPU memory after submission completion. |
 | Shader and layout features | Scalar layout, float16, 16-bit push/storage access, draw parameters, independent blending, and formatless storage-image access. |
 | Texture features | At least BC or ASTC LDR compression; exact format and usage support remains queryable. |
-| Win32 WSI | `VK_KHR_surface`, `VK_KHR_win32_surface`, `VK_KHR_swapchain`, and the maintenance extensions listed below. |
+| Presentation | `VK_KHR_surface`, the application's platform surface extension, `VK_KHR_swapchain`, and the maintenance extensions listed below. |
 
 Windowed devices also require `VK_KHR_get_surface_capabilities2`,
 `VK_KHR_surface_maintenance1`, and [`VK_KHR_swapchain_maintenance1`][swapchain-maintenance]. The
 original EXT variants are accepted as a paired fallback. Swapchain maintenance supplies a completion
 fence for each presentation.
 Debug builds enable `VK_EXT_debug_utils` and the Khronos validation layer when available.
+
+## Application-created surfaces
+
+Include `<NoGraphicsAPI/vulkan.hpp>` and pass a `VulkanSurfaceDesc` through `DeviceDesc::vulkan_surface`, leaving `window` null.
+Supply the window system's instance extensions, a surface-creation callback, and the initial drawable size in pixels.
+NoGraphicsAPI calls the callback with its instance before selecting a presentation-capable GPU. The descriptor, extension span,
+and callback context are consumed during initialization. NoGraphicsAPI destroys the returned surface before its instance,
+including after later initialization failures; the application keeps the native window alive until device destruction.
+
+After processing window events, call `set_drawable_extent()` outside an acquired frame. Wayland uses application-supplied
+pixel dimensions; fixed-size surfaces use Vulkan's dimensions. A zero extent suspends acquisition on either kind of surface.
+Updating the extent needs no GPU wait: existing swapchain retirement handles frames still in flight.
+The [Linux example window code](../examples/common/example_window_linux.cpp) integrates SDL3 without exposing it in the core API.
 
 ## GPU heaps and application-side allocation
 
@@ -302,8 +315,9 @@ For presentation, `acquire(commands)` returns a swapchain-owned `RenderView` and
 while the drawable extent is zero. Later command buffers in the same submission may also access the image.
 Submit through `submit_and_present(device, desc)`, which always uses queue zero and transitions the image
 back to presentation after all submitted command buffers.
-Windowed device creation/destruction, drawable queries, acquire, and presentation stay on the native
-message-pump thread; other work follows the threading rules above. Binary WSI semaphores remain private, while
+Win32 device lifecycle, drawable queries, acquire, and presentation stay on the window's message-pump thread.
+External surfaces follow the application's window-system threading contract; synchronize drawable updates with acquire/present.
+Other work follows the threading rules above. Binary WSI semaphores remain private, while
 `VK_KHR_swapchain_maintenance1` present fences support safe reuse and swapchain replacement without
 draining unrelated queue work.
 

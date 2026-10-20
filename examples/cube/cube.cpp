@@ -76,7 +76,7 @@ namespace {
 int main() {
 	// Init
 	void* window = open_example_window("NoGraphicsAPI spinning textured cube", width, height);
-    Device* device = create_device({.window = window, .swapchain_format = Format::bgra8_srgb}).device;
+    Device* device = create_example_device(window).device;
 
     if (!window || !device)
     {
@@ -157,7 +157,7 @@ int main() {
 	uint64 frame_index = 0;
     const float4x4 view = math::look_at_rh({.x = 0.0f, .y = 3.0f, .z = 5.0f}, {.x = 0.0f, .y = 0.0f, .z = 0.0f}, {.x = 0.0f, .y = 1.0f, .z = 0.0f});
 
-	while (pump_example_window(window))
+	while (pump_example_window(window, device))
 	{
         if (latest_completion.value >= 2)
             wait_timeline({.semaphore = latest_completion.semaphore, .value = latest_completion.value - 1});

@@ -54,6 +54,7 @@ add_library(NoGraphicsAPI STATIC
     include/NoGraphicsAPI/traits.hpp
     include/NoGraphicsAPI/bit.hpp
     include/NoGraphicsAPI/NoGraphicsAPI.hpp
+    include/NoGraphicsAPI/vulkan.hpp
     ${NoGraphicsAPI_backend_source}
 )
 add_library(NoGraphicsAPI::NoGraphicsAPI ALIAS NoGraphicsAPI)

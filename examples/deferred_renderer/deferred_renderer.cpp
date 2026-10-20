@@ -155,7 +155,7 @@ int main()
 {
     // Init
     void* window = open_example_window("NoGraphicsAPI deferred renderer", initial_width, initial_height);
-    Device* device = create_device({.window = window, .swapchain_format = Format::bgra8_srgb}).device;
+    Device* device = create_example_device(window).device;
 
     if (!window || !device)
     {
@@ -237,7 +237,7 @@ int main()
     DeleteQueue delete_queue(latest_completion.semaphore, frames_in_flight);
     CommandPool* command_pools[frames_in_flight] = {create_command_pool(device), create_command_pool(device)};
 
-    while (pump_example_window(window))
+    while (pump_example_window(window, device))
     {
         // Limit the application to two frames in flight so double-buffered descriptors are safe to reuse
         if (latest_completion.value >= frames_in_flight)

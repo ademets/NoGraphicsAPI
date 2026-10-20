@@ -6,6 +6,16 @@
 
 using namespace gpu;
 
+#if !defined(__linux__)
+DeviceInit create_example_device(void* window) noexcept
+{
+    if (!window) return {.error = Error::driver_error};
+    const DeviceInit result = create_device({.window = window, .swapchain_format = Format::bgra8_srgb});
+    if (result.error != Error::none) fprintf(stderr, "Device creation failed: %u\n", unsigned(result.error));
+    return result;
+}
+#endif
+
 Span<byte> read_shader(const char* path) noexcept
 {
     FILE* file = fopen(path, "rb");

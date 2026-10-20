@@ -9,5 +9,6 @@ void read_binary_file(const char* path, gpu::Span<byte> data) noexcept;
 double example_time_seconds() noexcept;
 
 void* open_example_window(const char* title, uint32 width, uint32 height) noexcept;
-bool pump_example_window(void* window) noexcept;
+[[nodiscard]] gpu::DeviceInit create_example_device(void* window) noexcept;
+bool pump_example_window(void* window, gpu::Device* device) noexcept;
 void close_example_window(void*& window) noexcept;

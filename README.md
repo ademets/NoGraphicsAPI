@@ -244,6 +244,7 @@ the library without examples and tests.
 - [Triangle](examples/triangle/triangle.cpp) — the smallest rendering example.
 - [Cube](examples/cube/cube.cpp) — GPU-pointer vertex fetch and bindless textures.
 - [Deferred renderer](examples/deferred_renderer/deferred_renderer.cpp) — compute simulation and mesh-shader rendering.
+- [Advanced deferred renderer](examples/advanced_deferred_renderer/advanced_deferred_renderer.cpp) — four times as many cubes with a cycling color spectrum.
 
 The executables are under `build-msvc/examples/<example>/Release` when using the supplied preset.
 

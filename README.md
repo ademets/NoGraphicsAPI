@@ -9,7 +9,7 @@ The goal is to make GPU programming feel more like working with ordinary memory 
 GPU pointers for data, heap indices for textures, and one GPU pointer to the arguments of each draw or dispatch.
 
 Metal and Vulkan are supported native backends. CMake selects Metal on macOS/iOS and Vulkan on Windows/Linux.
-Both use the same C++ API and Slang sources. Windows, macOS, and Linux include windowed examples; Linux uses SDL3 for Wayland or X11.
+Both use the same C++ API and Slang sources. Windows, macOS, and Linux include windowed examples; Linux uses native Wayland.
 
 ## What changes from classic rendering?
 
@@ -168,14 +168,15 @@ See [known driver issues](docs/known-driver-issues.md) for observed problems and
 
 ## Linux installation and quick start
 
-Install a C++20 compiler, CMake 3.24+, Vulkan headers/loader 1.4.357+, Slang 2026.14.1+, SPIRV-Tools 2026.3+, and SDL 3.2+.
-Use a GPU driver meeting the hardware requirements above. SDL is needed only for the examples and Wayland presentation test.
+Install a C++20 compiler, CMake 3.24+, Vulkan headers/loader 1.4.357+, Slang 2026.14.1+, and SPIRV-Tools 2026.3+.
+Use a GPU driver meeting the hardware requirements above. Windowed examples and the Wayland presentation test also require
+a C compiler, pkg-config, libwayland-client 1.22+, wayland-scanner, and wayland-protocols with stable xdg-shell.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DNOGRAPHICSAPI_BUILD_EXAMPLES=ON -DNOGRAPHICSAPI_BUILD_TESTS=ON
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-SDL_VIDEODRIVER=wayland build/examples/triangle/example_triangle
+build/examples/triangle/example_triangle
 ```
 
 Applications provide their own Vulkan surface creation and drawable dimensions; see [Vulkan presentation](docs/vulkan-support.md#application-created-surfaces).

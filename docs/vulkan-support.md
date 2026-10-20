@@ -56,7 +56,12 @@ including after later initialization failures; the application keeps the native 
 After processing window events, call `set_drawable_extent()` outside an acquired frame. Wayland uses application-supplied
 pixel dimensions; fixed-size surfaces use Vulkan's dimensions. A zero extent suspends acquisition on either kind of surface.
 Updating the extent needs no GPU wait: existing swapchain retirement handles frames still in flight.
-The [Linux example window code](../examples/common/example_window_linux.cpp) integrates SDL3 without exposing it in the core API.
+The [Linux example window code](../examples/common/example_window_linux.cpp) uses libwayland-client, stable xdg-shell, and
+`vkCreateWaylandSurfaceKHR` directly. It acknowledges the initial configure before presenting and applies subsequent logical-size
+and integer-scale changes before Vulkan commits the next buffer. A race-free, nonblocking event pump leaves Vulkan's event queue independent.
+Presentation remains compositor-mediated. The examples require `wl_compositor` v6 and `xdg_wm_base` v1; fractional buffer scaling,
+client-side decorations, and application input handling are omitted. Use compositor controls to move, resize, and close the windows.
+On fractional-scale outputs, integer buffer scaling can render extra pixels for compositor resampling.
 
 ## GPU heaps and application-side allocation
 

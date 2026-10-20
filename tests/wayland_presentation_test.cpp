@@ -1,8 +1,6 @@
-#include <NoGraphicsAPI/vulkan.hpp>
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_vulkan.h>
+#include "example_window_wayland.hpp"
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
 namespace
 {
@@ -14,7 +12,7 @@ bool expected_error = false;
 
 struct SurfaceContext
 {
-    SDL_Window* window = nullptr;
+    gpu::VulkanSurfaceDesc native = {};
     uint32 calls = 0;
     bool fail = false;
 };
@@ -31,14 +29,12 @@ VkResult create_surface(VkInstance instance, void* user_data, VkSurfaceKHR* surf
     SurfaceContext& context = *static_cast<SurfaceContext*>(user_data);
     ++context.calls;
     if (context.fail) return VK_ERROR_INITIALIZATION_FAILED;
-    if (SDL_Vulkan_CreateSurface(context.window, instance, nullptr, surface)) return VK_SUCCESS;
-    fprintf(stderr, "SDL_Vulkan_CreateSurface: %s\n", SDL_GetError());
-    return VK_ERROR_INITIALIZATION_FAILED;
+    return context.native.create_surface(instance, context.native.user_data, surface);
 }
 
-int test_presentation(SDL_Window* window, gpu::Span<const char* const> extensions) noexcept
+int test_presentation(void* window) noexcept
 {
-    SurfaceContext context{.window = window};
+    SurfaceContext context{.native = example_wayland_surface(window)};
     const char* missing_extensions[]{"VK_NOGRAPHICSAPI_missing_surface_extension"};
     const gpu::VulkanSurfaceDesc missing_surface{
         .instance_extensions = missing_extensions,
@@ -51,7 +47,7 @@ int test_presentation(SDL_Window* window, gpu::Span<const char* const> extension
     gpu::destroy_device(init.device);
 
     const gpu::VulkanSurfaceDesc surface{
-        .instance_extensions = extensions,
+        .instance_extensions = context.native.instance_extensions,
         .create_surface = create_surface,
         .user_data = &context,
     };
@@ -86,8 +82,7 @@ int test_presentation(SDL_Window* window, gpu::Span<const char* const> extension
 
         for (uint32 frame_index = 0; frame_index < 12; ++frame_index)
         {
-            SDL_Event event{};
-            while (SDL_PollEvent(&event)) {}
+            CHECK(pump_example_window(window, device));
             if (completion.value >= 2)
                 gpu::wait_timeline({.semaphore = completion.semaphore, .value = completion.value - 1});
             gpu::CommandPool* pool = pools[completion.value % 2];
@@ -111,9 +106,7 @@ int test_presentation(SDL_Window* window, gpu::Span<const char* const> extension
                 CHECK(gpu::set_swapchain_format(device, gpu::Format::d32_float, gpu::ColorSpace::srgb) == gpu::Error::unsupported);
                 expected_error = false;
             }
-            const gpu::uint32x2 requested = frame_index < 2 || frame_index >= 8
-                ? gpu::uint32x2{.x = 320, .y = 240} : gpu::uint32x2{.x = 384, .y = 256};
-            if (frame_index == 2 || frame_index == 8) SDL_SetWindowSize(window, int(requested.x), int(requested.y));
+            const gpu::uint32x2 requested = example_wayland_surface(window).drawable_extent;
             gpu::set_drawable_extent(device, requested);
             const gpu::uint32x2 extent = gpu::get_drawable_extent(device);
             CHECK(extent.x == requested.x && extent.y == requested.y);
@@ -138,7 +131,7 @@ int test_presentation(SDL_Window* window, gpu::Span<const char* const> extension
     gpu::destroy_command_pool(pools[0]);
     gpu::destroy_timeline_semaphore(completion.semaphore);
     gpu::destroy_device(device);
-    if (!failures) puts("Native Wayland surface creation, failure recovery, resize, zero drawable, and presentation checks passed.");
+    if (!failures) puts("Native Wayland surface creation, failure recovery, zero drawable, and presentation checks passed.");
     return failures ? 1 : 0;
 }
 
@@ -146,35 +139,16 @@ int test_presentation(SDL_Window* window, gpu::Span<const char* const> extension
 
 int main()
 {
-    if (!SDL_Init(SDL_INIT_VIDEO))
-    {
-        fprintf(stderr, "SKIP: SDL video initialization: %s\n", SDL_GetError());
-        return 77;
-    }
-    if (strcmp(SDL_GetCurrentVideoDriver(), "wayland") != 0)
+    if (!getenv("WAYLAND_DISPLAY") && !getenv("WAYLAND_SOCKET"))
     {
         puts("SKIP: this test requires native Wayland.");
-        SDL_Quit();
         return 77;
     }
-    SDL_Window* window = SDL_CreateWindow("NoGraphicsAPI Wayland presentation test", 320, 240, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-    if (!window)
-    {
-        fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-    uint32 extension_count = 0;
-    const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extension_count);
-    int result = 1;
-    if (!extensions) fprintf(stderr, "SDL_Vulkan_GetInstanceExtensions: %s\n", SDL_GetError());
-    else
-    {
-        gpu::set_error_callback(receive_error);
-        result = test_presentation(window, {extensions, extension_count});
-        gpu::set_error_callback(nullptr);
-    }
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    void* window = open_example_window("NoGraphicsAPI Wayland presentation test", 320, 240);
+    if (!window) return 1;
+    gpu::set_error_callback(receive_error);
+    const int result = test_presentation(window);
+    gpu::set_error_callback(nullptr);
+    close_example_window(window);
     return result;
 }

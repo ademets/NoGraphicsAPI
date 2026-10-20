@@ -7,7 +7,7 @@ CMake selects native Metal 4 on Apple platforms and Vulkan elsewhere. Apple devi
 | Target | Toolchain |
 | --- | --- |
 | Windows x86-64 | MSVC or clang-cl. |
-| Linux x86-64 | GCC or Clang; SDL 3.2+ for windowed examples. |
+| Linux x86-64 | GCC or Clang; Wayland 1.22+ and stable xdg-shell for windowed examples. |
 | macOS 26+ ARM64 | Xcode 26+ SDK and Metal compiler. |
 | iOS/iPadOS 26+ ARM64 | Xcode 26+ with the device SDK. |
 
@@ -31,9 +31,10 @@ Debug Vulkan builds enable validation when installed. Metal validation is opt-in
 Apple example/test shader builds require stock Slang 2026.18.2+ and Xcode's Metal compiler. Vulkan shader builds require
 Slang 2026.14.1+ and SPIRV-Tools 2026.3+. Shader tools are not required for a library-only build.
 
-Linux examples use SDL3 for native Wayland or X11 windows; the core library has no SDL dependency.
-With examples and tests enabled, CTest also builds a native Wayland presentation test, skipped when no Wayland display is available.
-To select Wayland explicitly, run `SDL_VIDEODRIVER=wayland build/examples/triangle/example_triangle`.
+Linux examples use libwayland-client directly and generate stable xdg-shell bindings at build time with wayland-scanner.
+They require a C compiler, pkg-config, wayland-protocols, and a compositor providing `wl_compositor` v6 and `xdg_wm_base` v1.
+The core library has no Wayland dependency. With examples and tests enabled, CTest builds a native Wayland presentation test,
+skipped when no Wayland display is configured. There is no SDL or X11 dependency.
 
 For iOS, disable desktop examples and tests and select the device SDK:
 

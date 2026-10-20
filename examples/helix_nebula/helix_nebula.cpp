@@ -16,6 +16,7 @@ namespace
 {
 
 constexpr uint32 frames_in_flight = 2;
+constexpr double rotation_period_seconds = 240.0;
 constexpr uint32 noise_extent = 64;
 constexpr uint64 noise_byte_count = uint64(noise_extent) * noise_extent * noise_extent * 4;
 constexpr TextureDesc noise_description{
@@ -210,8 +211,7 @@ int main(int argc, char** argv)
         const SwapchainFrame frame = acquire(commands);
         if (!frame.render_view) continue;
 
-        const float time = float(example_time_seconds() - start);
-        const float tilt = 0.62f + 0.035f * sinf(time * 0.045f);
+        const float tilt = 0.62f + float(fmod((example_time_seconds() - start) / rotation_period_seconds, 1.0) * 6.283185307179586);
         const HelixNebulaRoot root{
             .inverse_extent = {.x = 1.0f / float(frame.extent.x), .y = 1.0f / float(frame.extent.y)},
             .aspect = float(frame.extent.x) / float(frame.extent.y),
